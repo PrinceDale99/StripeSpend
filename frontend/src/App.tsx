@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { isConnected, isAllowed, setAllowed, getAddress, getNetwork } from '@stellar/freighter-api';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Wallet, ShieldCheck, Clock, ArrowRight, Loader2, AlertCircle, CheckCircle2, ChevronRight, ExternalLink } from 'lucide-react';
+import { Wallet, ShieldCheck, Clock, ArrowRight, Loader2, AlertCircle, CheckCircle2, ExternalLink } from 'lucide-react';
 
 export default function App() {
   const [hasFreighter, setHasFreighter] = useState(false);
