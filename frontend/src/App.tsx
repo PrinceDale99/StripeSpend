@@ -181,6 +181,7 @@ export default function App() {
   }, [isDarkMode]);
 
   const [showConnectModal, setShowConnectModal] = useState(false);
+  const [showDisconnectConfirm, setShowDisconnectConfirm] = useState(false);
   const [txModal, setTxModal] = useState<{ show: boolean, status: 'pending' | 'success' | 'failed', message: string }>({ show: false, status: 'pending', message: '' });
   const { globalStats, studentState, donorDeposit, studentClaim, verifyStudent } = useProtocolState(walletAddress, isDemoMode);
 
@@ -276,9 +277,7 @@ export default function App() {
           <button 
             onClick={() => {
               if (walletAddress) {
-                setWalletAddress(null);
-                setView('landing');
-                setIsDemoMode(false);
+                setShowDisconnectConfirm(true);
               } else {
                 setShowConnectModal(true);
               }
@@ -316,6 +315,37 @@ export default function App() {
             <button onClick={() => setShowDemoModal(false)} className="bg-bauhaus-black dark:bg-gray-800 text-bauhaus-white font-black uppercase tracking-[0.3em] px-12 py-5 w-full hover:bg-gray-700 transition-all border-4 border-bauhaus-black">
               I Understand
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Disconnect Confirmation Modal */}
+      {showDisconnectConfirm && (
+        <div className="fixed inset-0 bg-black/80 z-[70] flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="bg-bauhaus-white dark:bg-gray-900 border-8 border-bauhaus-black dark:border-gray-800 p-8 md:p-10 w-full max-w-sm text-center">
+            <h2 className="text-xl md:text-2xl font-black uppercase mb-6 tracking-widest text-bauhaus-red">Disconnect?</h2>
+            <p className="text-[10px] md:text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-8">
+              Are you sure you want to sign out and end your session?
+            </p>
+            <div className="grid grid-cols-2 gap-4">
+              <button 
+                onClick={() => {
+                  setWalletAddress(null);
+                  setView('landing');
+                  setIsDemoMode(false);
+                  setShowDisconnectConfirm(false);
+                }} 
+                className="bg-bauhaus-red text-white font-bold uppercase tracking-widest py-4 hover:bg-red-700 transition-colors border-2 border-bauhaus-black"
+              >
+                Yes
+              </button>
+              <button 
+                onClick={() => setShowDisconnectConfirm(false)} 
+                className="bg-bauhaus-black text-white font-bold uppercase tracking-widest py-4 hover:bg-gray-800 transition-colors border-2 border-bauhaus-black"
+              >
+                No
+              </button>
+            </div>
           </div>
         </div>
       )}
