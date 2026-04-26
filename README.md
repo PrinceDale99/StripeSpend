@@ -116,10 +116,32 @@ npm install
 npm run dev
 ```
 
-### Build Contract
+### Detailed Deployment
 ```bash
-cd ../contracts/hello-world
+# 1. Generate and fund a Testnet identity
+soroban config identity generate deployer
+soroban config identity fund deployer --network testnet
+
+# 2. Build the contract
+cd contracts/hello-world
 soroban contract build
+
+# 3. Deploy to Testnet
+soroban contract deploy \
+  --wasm target/wasm32-unknown-unknown/release/stipestream.wasm \
+  --source deployer \
+  --network testnet
+```
+
+### CLI Invocation
+You can interact with the live contract directly via CLI:
+```bash
+soroban contract invoke \
+  --id CCSUHUIWD7KLPACAVPROOFMUD6D3GPMEXJVXSRFB52BCVQHREKEH2YCV \
+  --source <YOUR_SECRET_KEY> \
+  --network testnet \
+  -- \
+  claim
 ```
 
 ---
