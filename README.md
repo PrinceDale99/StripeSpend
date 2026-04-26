@@ -75,13 +75,13 @@ The core logic resides in a Soroban contract tracking a `StipendState` with the 
 ## Web Application Interface
 Here is the neo-brutalist inspired UI for StipeStream, designed for a frictionless user experience:
 
-### Home Dashboard
+### Landing Page & Trust Signals
 ![Home](./site_home.png)
 
-### Secure Stipend Entry
+### Scholar Dashboard & Identity
 ![Stipends](./site_stipends.png)
 
-### Transaction Ledger
+### Donor Dashboard & Impact
 ![History](./site_history.png)
 
 ## Timeline
