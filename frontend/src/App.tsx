@@ -142,20 +142,21 @@ export default function App() {
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [view, setView] = useState<'landing' | 'student' | 'donor'>('landing');
 
-  // Dark Mode State
+  // Dark Mode State - Default to light unless explicitly saved as dark
   const [isDarkMode, setIsDarkMode] = useState(() => {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
+      return localStorage.getItem('theme') === 'dark';
     }
     return false;
   });
 
   useEffect(() => {
+    const root = window.document.documentElement;
     if (isDarkMode) {
-      document.documentElement.classList.add('dark');
+      root.classList.add('dark');
       localStorage.setItem('theme', 'dark');
     } else {
-      document.documentElement.classList.remove('dark');
+      root.classList.remove('dark');
       localStorage.setItem('theme', 'light');
     }
   }, [isDarkMode]);
