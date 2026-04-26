@@ -283,7 +283,10 @@ export default function App() {
           </button>
           <button 
             onClick={() => {
-              if (walletAddress) {
+              if (walletAddress === "G_DEMO_ACCOUNT_123") {
+                setWalletAddress(null);
+                setIsDemoMode(false);
+              } else if (walletAddress) {
                 setShowDisconnectConfirm(true);
               } else {
                 setShowConnectModal(true);
@@ -296,7 +299,7 @@ export default function App() {
               {walletAddress ? (isDemoMode && walletAddress === "G_DEMO_ACCOUNT_123" ? "DEMO WALLET" : formatAddress(walletAddress)) : 'Connect Wallet'}
             </span>
             <span className="hidden group-hover:inline">
-              {walletAddress ? "Disconnect" : "Connect Wallet"}
+              {walletAddress === "G_DEMO_ACCOUNT_123" ? "Exit Demo" : (walletAddress ? "Disconnect" : "Connect Wallet")}
             </span>
           </button>
         </div>
