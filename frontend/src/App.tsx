@@ -43,27 +43,36 @@ function useProtocolState(walletAddress: string | null, isDemoMode: boolean) {
   const [studentState, setStudentState] = useState<StudentState>(DEFAULT_STUDENT);
 
   useEffect(() => {
-    const savedGlobal = localStorage.getItem('stipestream_global');
+    const globalKey = isDemoMode ? 'stipestream_demo_global' : 'stipestream_global';
+    const savedGlobal = localStorage.getItem(globalKey);
     if (savedGlobal) setGlobalStats(JSON.parse(savedGlobal));
+    else if (isDemoMode) setGlobalStats({ tvl: 12500, distributedCount: 42, activeStudents: 15, donorImpact: 'Demo Patron' });
 
     if (walletAddress) {
-      const savedStudent = localStorage.getItem(`stipestream_student_${walletAddress}`);
+      const studentKey = isDemoMode ? `stipestream_demo_student_${walletAddress}` : `stipestream_student_${walletAddress}`;
+      const savedStudent = localStorage.getItem(studentKey);
       if (savedStudent) setStudentState(JSON.parse(savedStudent));
-      else setStudentState(DEFAULT_STUDENT);
+      else if (isDemoMode && walletAddress === "G_DEMO_ACCOUNT_123") {
+        setStudentState({ payoutAmount: 250, intervalSecs: 2592000, lastClaimTime: 0, totalBalance: 1500, isVerified: true });
+      } else {
+        setStudentState(DEFAULT_STUDENT);
+      }
     }
-  }, [walletAddress]);
+  }, [walletAddress, isDemoMode]);
 
   const updateGlobal = (newStats: Partial<GlobalStats>) => {
     const updated = { ...globalStats, ...newStats };
     setGlobalStats(updated);
-    localStorage.setItem('stipestream_global', JSON.stringify(updated));
+    const key = isDemoMode ? 'stipestream_demo_global' : 'stipestream_global';
+    localStorage.setItem(key, JSON.stringify(updated));
   };
 
   const updateStudent = (newStudent: Partial<StudentState>) => {
     if (!walletAddress) return;
     const updated = { ...studentState, ...newStudent };
     setStudentState(updated);
-    localStorage.setItem(`stipestream_student_${walletAddress}`, JSON.stringify(updated));
+    const key = isDemoMode ? `stipestream_demo_student_${walletAddress}` : `stipestream_student_${walletAddress}`;
+    localStorage.setItem(key, JSON.stringify(updated));
   };
 
   const executeRealSorobanTx = async (method: string, args: StellarSdk.xdr.ScVal[] = []) => {
