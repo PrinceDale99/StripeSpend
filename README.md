@@ -25,31 +25,3 @@ To automate social aid and educational grants, ensuring funds reach students exa
 **1. How to Build**
 ```bash
 soroban contract build
-```
-
-**2. How to Test**
-```bash
-cargo test
-```
-
-**3. How to Deploy to Testnet**
-```bash
-soroban contract deploy \
-  --wasm target/wasm32-unknown-unknown/release/stipestream.wasm \
-  --source <YOUR_FUNDED_SECRET_KEY> \
-  --network testnet
-```
-
-**4. CLI Invocation (Simulate MVP Function)**
-*(Assuming contract ID is `C...` and enough time has passed since initialization)*
-```bash
-soroban contract invoke \
-  --id <YOUR_CONTRACT_ID> \
-  --source <STUDENT_SECRET_KEY> \
-  --network testnet \
-  -- \
-  claim
-```
-
-## License
-MIT License
