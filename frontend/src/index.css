@@ -2,36 +2,28 @@
 @import "tailwindcss";
 
 @theme {
-  --color-bauhaus-bg: #F8F9FA;
-  --color-bauhaus-red: #E63946;
-  --color-bauhaus-blue: #1D3557;
-  --color-bauhaus-yellow: #E9C46A;
-  --color-bauhaus-black: #2B2D42;
-  --color-bauhaus-white: #ffffff;
+  --color-bauhaus-bg: #F4F4F4;
+  --color-bauhaus-red: #E63946; /* Vibrant but easy on the eyes */
+  --color-bauhaus-blue: #1D4ED8; /* Tailwind blue-700, crisp and bright */
+  --color-bauhaus-yellow: #FACC15; /* Tailwind yellow-400, bright and sunny */
+  --color-bauhaus-black: #111827; /* Tailwind gray-900, sharp but not pure black */
+  --color-bauhaus-white: #FFFFFF;
 }
 
 @layer base {
   body {
-    @apply bg-bauhaus-bg text-bauhaus-black antialiased font-sans;
+    @apply bg-bauhaus-bg text-bauhaus-black antialiased font-sans transition-colors duration-300;
   }
 }
 
 .bauhaus-container {
-  @apply max-w-7xl mx-auto px-6 py-12;
+  @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12;
 }
 
 .bauhaus-card {
-  @apply bg-bauhaus-white p-8 relative overflow-hidden;
-}
-
-.bauhaus-btn-primary {
-  @apply bg-bauhaus-red text-white font-bold uppercase tracking-[0.2em] text-xs px-8 py-4 hover:bg-[#d62828] transition-colors inline-block text-center cursor-pointer;
-}
-
-.bauhaus-btn-secondary {
-  @apply bg-bauhaus-blue text-white font-bold uppercase tracking-[0.2em] text-xs px-8 py-4 hover:bg-[#14213d] transition-colors inline-block text-center cursor-pointer;
+  @apply bg-bauhaus-white dark:bg-gray-800 p-6 md:p-8 relative overflow-hidden transition-colors duration-300;
 }
 
 .bauhaus-input {
-  @apply w-full bg-transparent border-b-2 border-bauhaus-black p-3 text-lg font-medium focus:outline-none rounded-none placeholder:text-gray-400;
+  @apply w-full bg-transparent border-b-4 border-bauhaus-black dark:border-white p-3 md:p-4 text-lg md:text-xl font-bold focus:outline-none rounded-none placeholder:text-gray-400 dark:text-white transition-colors duration-300;
 }

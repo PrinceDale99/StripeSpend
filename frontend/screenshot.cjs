@@ -27,16 +27,26 @@ const puppeteer = require('puppeteer');
   
   await page.evaluate(() => {
     const buttons = Array.from(document.querySelectorAll('button'));
-    const btn = buttons.find(b => b.textContent.includes('Student'));
+    const btn = buttons.find(b => b.textContent.includes('Student') || b.textContent.includes('Scholar'));
     if (btn) btn.click();
     
     // Also simulate wallet connect in state by clicking Connect Wallet -> Freighter
     const connectBtn = Array.from(document.querySelectorAll('button')).find(b => b.textContent.includes('Connect Wallet'));
     if (connectBtn) connectBtn.click();
+    
+    // Toggle Dark Mode
+    const darkModeBtn = Array.from(document.querySelectorAll('button')).find(b => b.innerHTML.includes('lucide'));
+    if (darkModeBtn) darkModeBtn.click();
   });
   // Wait a bit for render
   await new Promise(r => setTimeout(r, 1000));
   await page.screenshot({ path: '../site_stipends.png', fullPage: true });
+
+  // Toggle Dark Mode back off for the Donor Dashboard
+  await page.evaluate(() => {
+    const darkModeBtn = Array.from(document.querySelectorAll('button')).find(b => b.innerHTML.includes('lucide'));
+    if (darkModeBtn) darkModeBtn.click();
+  });
 
   // Navigate to Donor
   await page.evaluate(() => {
