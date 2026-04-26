@@ -4,23 +4,27 @@
 
 ![StipeStream Banner](./site_home.png)
 
+## The Friction: Why StipeStream?
+**The Scenario:** Maria is a senior computer science student at a university in Metro Manila. Her monthly living allowance from a local scholarship NGO is her only way to pay for her daily commute and meals. When the NGO’s accounting department faces a "bureaucratic bottleneck," Maria’s funds are delayed by two weeks. 
+
+This delay costs her **$15 in late rent penalties** and forces her to **skip at least one meal a day** to stretch her remaining cash. With StipeStream, the NGO locks the funds once at the start of the semester, and Maria withdraws her $100 allowance exactly every 30 days—no administrative delays, no late fees, no skipped meals.
+
+---
+
 ## What is StipeStream?
 StipeStream is a decentralized aid disbursement protocol built on the **Stellar Soroban** network. It empowers NGOs, alumni funds, and educational institutions to lock stipends in a smart contract, allowing students to claim their allowance trustlessly and automatically on a strict schedule.
 
 ---
 
 ## Why Stellar?
-- **Low Fees:** Distributing $100 in aid should not cost $10 in network fees. Stellar's fraction-of-a-cent transaction fees ensure the maximum amount of aid reaches the scholar.
-- **Soroban Smart Contracts:** Leveraging `Env::ledger().timestamp()` for secure, un-cheatable time-locked conditions.
-- **Freighter Wallet:** The industry-standard entry point for the Stellar ecosystem, providing a secure and familiar bridge for users.
-- **USDC on Stellar:** Near-instant settlement of stable value, ensuring students receive funds they can use immediately without volatility.
+StipeStream leverages the Stellar network to solve the "last mile" of aid distribution:
 
-## Design Philosophy: Bauhaus Functionalism
-StipeStream is designed around the **Bauhaus Design System**, emphasizing geometric clarity, structural hierarchy, and vibrant primary colors.
-- **Crimson (#E63946):** Urgent actions and progress tracking.
-- **Navy (#1D4ED8):** Primary identity and student verification status.
-- **Gold (#FACC15):** Rewards, treasury volume, and positive impact metrics.
-- **Charcoal (#111827):** Deep contrast and professional structural elements.
+| Feature | Use Case in StipeStream |
+| :--- | :--- |
+| **Soroban Smart Contracts** | Enforces the 30-day time-lock and automatic payout logic trustlessly. |
+| **USDC (Stellar Asset)** | Provides a stable store of value for scholars, avoiding crypto volatility. |
+| **Freighter Wallet** | Handles secure transaction signing for deposits and claims with zero friction. |
+| **Network Ledger** | Provides absolute transparency for NGO treasury audits and public trust. |
 
 ---
 
@@ -43,7 +47,6 @@ Full support for user-preferred theming. StipeStream remembers your choice betwe
 The dashboard is engineered to be a mobile-first experience. 
 - **Wrapping Headers:** Navigation and wallet controls wrap logically on small screens.
 - **Stacked Layouts:** Complex dashboards transition from multi-column grids to intuitive vertical stacks.
-- **Diagram Alignment:** The Fund Allocation flow diagram dynamically re-aligns its connectors for small screens.
 
 ---
 
@@ -89,18 +92,23 @@ stipestream/
 
 ---
 
-## Status Lifecycle
-1. **Unverified:** Student must prove identity (simulated zk-Proof).
-2. **Active:** Contract is funded and student is waiting for the timer.
-3. **Unlocked:** 30 days have passed; the "Claim" button becomes vibrant red.
-4. **Claimed:** Funds transferred; timer resets; on-chain success event triggered.
+## User Walkthrough
+1. **Enter Demo Mode:** Toggle the Demo button in the top right to explore without real funds.
+2. **Onboard Scholar:** In the Sponsor Dashboard, check 'Onboard new scholar' and deposit simulated USDC.
+3. **Verify Identity:** In the Scholar Dashboard, click 'Verify Student ID' to simulate a zk-Proof KYC check.
+4. **Claim Stipend:** Once the 30-day timer expires (or simulated in Demo), click 'Claim USDC' to trigger the distribution.
 
 ---
 
-## Contract Functions
-- `initialize`: Sets the funder, student, and payout parameters.
-- `deposit`: Locks USDC into the contract vault.
-- `claim`: Transfers the payout if the 30-day window has closed.
+## Smart Contract Details
+
+**Contract ID:** `CCSUHUIWD7KLPACAVPROOFMUD6D3GPMEXJVXSRFB52BCVQHREKEH2YCV`
+
+- **Deployed Smart Contract:** [View on Stellar Lab (Testnet)](https://lab.stellar.org/r/testnet/contract/CCSUHUIWD7KLPACAVPROOFMUD6D3GPMEXJVXSRFB52BCVQHREKEH2YCV)
+- **Deployment Transaction:** [View on Stellar Expert](https://stellar.expert/explorer/testnet/tx/67a18357ecf92708f61bd0132823395767bf4df8816802d8404e5f6592004bfd)
+
+### On-Chain Verification
+![Stellar Expert Transaction](./stellar_expert_screenshot.png)
 
 ---
 
@@ -112,11 +120,24 @@ stipestream/
 * Node.js v18+
 * Freighter Wallet Extension
 
-### Installation
+### Detailed Setup
+**1. Clone and Install**
 ```bash
 git clone https://github.com/PrinceDale99/StripeSpend.git
 cd StripeSpend/frontend
 npm install
+```
+
+**2. Environment Variables**
+Create a `.env` file in the `frontend` directory:
+```env
+VITE_CONTRACT_ID=CCSUHUIWD7KLPACAVPROOFMUD6D3GPMEXJVXSRFB52BCVQHREKEH2YCV
+VITE_STELLAR_RPC_URL=https://soroban-testnet.stellar.org
+VITE_NETWORK_PASSPHRASE="Test SDF Network ; September 2015"
+```
+
+**3. Run Locally**
+```bash
 npm run dev
 ```
 
@@ -136,30 +157,6 @@ soroban contract deploy \
   --source deployer \
   --network testnet
 ```
-
-### CLI Invocation
-You can interact with the live contract directly via CLI:
-```bash
-soroban contract invoke \
-  --id CCSUHUIWD7KLPACAVPROOFMUD6D3GPMEXJVXSRFB52BCVQHREKEH2YCV \
-  --source <YOUR_SECRET_KEY> \
-  --network testnet \
-  -- \
-  claim
-```
-
----
-
-## UI Walkthrough
-
-### Home: Establishing Trust
-Clearly explains the Web3 value proposition without jargon. Features live treasury stats and the "Built on Stellar" badge.
-
-### Scholar: Claiming stipends
-Displays the next unlock timer, available balance, and verification status.
-
-### Sponsor: Funding the future
-A one-click deposit interface with the ability to "Onboard New Scholars" and track impact via a dynamic SVG "Impact NFT".
 
 ---
 
