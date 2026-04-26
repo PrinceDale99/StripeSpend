@@ -182,8 +182,15 @@ export default function App() {
 
   const [showConnectModal, setShowConnectModal] = useState(false);
   const [showDisconnectConfirm, setShowDisconnectConfirm] = useState(false);
+  const [showLargeDonationConfirm, setShowLargeDonationConfirm] = useState<{ show: boolean, amount: number, callback: () => void }>({ show: false, amount: 0, callback: () => {} });
   const [txModal, setTxModal] = useState<{ show: boolean, status: 'pending' | 'success' | 'failed', message: string }>({ show: false, status: 'pending', message: '' });
   const { globalStats, studentState, donorDeposit, studentClaim, verifyStudent } = useProtocolState(walletAddress, isDemoMode);
+
+  useEffect(() => {
+    (window as any).confirmLargeDonation = (amount: number, callback: () => void) => {
+      setShowLargeDonationConfirm({ show: true, amount, callback });
+    };
+  }, []);
 
   useEffect(() => {
     const initFreighter = async () => {
@@ -344,6 +351,38 @@ export default function App() {
                 className="bg-bauhaus-black text-white font-bold uppercase tracking-widest py-4 hover:bg-gray-800 transition-colors border-2 border-bauhaus-black"
               >
                 No
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Large Donation Confirmation Modal */}
+      {showLargeDonationConfirm.show && (
+        <div className="fixed inset-0 bg-black/90 z-[80] flex items-center justify-center p-4 backdrop-blur-md">
+          <div className="bg-bauhaus-white dark:bg-gray-900 border-8 border-bauhaus-yellow p-8 md:p-12 w-full max-w-lg text-center animate-in zoom-in duration-300">
+            <div className="w-20 h-20 bg-bauhaus-yellow rounded-full mx-auto mb-8 flex items-center justify-center text-bauhaus-black text-4xl font-black">?</div>
+            <h2 className="text-3xl font-black uppercase mb-6 tracking-tighter text-bauhaus-black dark:text-white">High Value Donation</h2>
+            <p className="font-bold text-sm md:text-base uppercase tracking-widest leading-relaxed mb-10 text-bauhaus-black dark:text-white">
+              You are about to deposit <span className="text-bauhaus-blue dark:text-blue-400">{showLargeDonationConfirm.amount.toLocaleString()} USDC</span>.
+              <br/><br/>
+              Are you sure you want to proceed with this amount?
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <button 
+                onClick={() => {
+                  showLargeDonationConfirm.callback();
+                  setShowLargeDonationConfirm({ ...showLargeDonationConfirm, show: false });
+                }} 
+                className="bg-bauhaus-yellow text-bauhaus-black font-black uppercase tracking-widest py-5 w-full hover:bg-white transition-all border-4 border-bauhaus-black"
+              >
+                Confirm
+              </button>
+              <button 
+                onClick={() => setShowLargeDonationConfirm({ ...showLargeDonationConfirm, show: false })} 
+                className="bg-bauhaus-black text-white font-black uppercase tracking-widest py-5 w-full hover:bg-gray-800 transition-all border-4 border-bauhaus-black"
+              >
+                Cancel
               </button>
             </div>
           </div>
@@ -630,7 +669,20 @@ function DonorDashboard({ triggerTx, depositFn, globalStats }: { triggerTx: any,
           </label>
         </div>
 
-        <button onClick={() => triggerTx('Smart Contract Deposit', handleDeposit)} className="bg-bauhaus-yellow text-bauhaus-black font-black uppercase tracking-[0.1em] md:tracking-[0.2em] py-3 md:py-6 px-4 md:px-12 border-4 border-bauhaus-black hover:bg-white transition-colors cursor-pointer w-full text-[10px] md:text-sm">
+        <button 
+          onClick={() => {
+            const execute = () => triggerTx('Smart Contract Deposit', handleDeposit);
+            if (amount >= 5000) {
+              // We need to pass the trigger function to the parent's modal state
+              // But since we are inside DonorDashboard, we should probably handle it via a prop
+              // For simplicity in this structure, I'll update the parent's trigger
+              (window as any).confirmLargeDonation(amount, execute);
+            } else {
+              execute();
+            }
+          }} 
+          className="bg-bauhaus-yellow text-bauhaus-black font-black uppercase tracking-[0.1em] md:tracking-[0.2em] py-3 md:py-6 px-4 md:px-12 border-4 border-bauhaus-black hover:bg-white transition-colors cursor-pointer w-full text-[10px] md:text-sm"
+        >
           Fund Protocol via Soroban
         </button>
       </div>
