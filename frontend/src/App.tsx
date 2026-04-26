@@ -501,8 +501,9 @@ function StudentDashboard({ triggerTx, state, verifyFn, claimFn, walletAddress }
 
 function DonorDashboard({ triggerTx, depositFn, globalStats }: { triggerTx: any, depositFn: any, globalStats: GlobalStats }) {
   const [amount, setAmount] = useState<number>(1000);
+  const [isOnboarding, setIsOnboarding] = useState(true);
 
-  const handleDeposit = async () => { return await depositFn(amount, true); };
+  const handleDeposit = async () => { return await depositFn(amount, isOnboarding); };
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-8 animate-in fade-in duration-700">
@@ -549,7 +550,7 @@ function DonorDashboard({ triggerTx, depositFn, globalStats }: { triggerTx: any,
 
       <div className="col-span-1 md:col-span-8 bg-bauhaus-blue dark:bg-blue-800 text-white p-6 md:p-12 border-4 border-bauhaus-black dark:border-gray-700">
         <h2 className="text-lg md:text-xl font-bold tracking-[0.2em] uppercase mb-6 md:mb-8">One-Click Funding</h2>
-        <div className="flex flex-col sm:flex-row gap-6">
+        <div className="flex flex-col sm:flex-row gap-6 mb-6 md:mb-8">
           <div className="flex-1">
             <label className="block text-[10px] md:text-xs font-bold tracking-[0.1em] md:tracking-[0.2em] uppercase mb-2 md:mb-4 text-bauhaus-yellow">Select Pool</label>
             <select className="w-full bg-transparent border-b-4 border-white p-2 md:p-4 text-sm md:text-xl font-bold focus:outline-none appearance-none">
@@ -562,7 +563,21 @@ function DonorDashboard({ triggerTx, depositFn, globalStats }: { triggerTx: any,
             <input type="number" value={amount} onChange={e => setAmount(Number(e.target.value))} className="w-full bg-transparent border-b-4 border-white p-2 md:p-4 text-sm md:text-xl font-bold focus:outline-none" />
           </div>
         </div>
-        <button onClick={() => triggerTx('Smart Contract Deposit', handleDeposit)} className="mt-6 md:mt-12 bg-bauhaus-yellow text-bauhaus-black font-black uppercase tracking-[0.1em] md:tracking-[0.2em] py-3 md:py-6 px-4 md:px-12 border-4 border-bauhaus-black hover:bg-white transition-colors cursor-pointer w-full text-[10px] md:text-sm">
+
+        <div className="flex items-center gap-4 mb-8 md:mb-10 bg-white/10 p-4 border-2 border-white/20">
+          <input 
+            type="checkbox" 
+            id="onboard" 
+            checked={isOnboarding} 
+            onChange={(e) => setIsOnboarding(e.target.checked)}
+            className="w-6 h-6 accent-bauhaus-yellow cursor-pointer"
+          />
+          <label htmlFor="onboard" className="font-bold uppercase tracking-widest text-[10px] md:text-xs cursor-pointer select-none">
+            Onboard new scholar with this donation
+          </label>
+        </div>
+
+        <button onClick={() => triggerTx('Smart Contract Deposit', handleDeposit)} className="bg-bauhaus-yellow text-bauhaus-black font-black uppercase tracking-[0.1em] md:tracking-[0.2em] py-3 md:py-6 px-4 md:px-12 border-4 border-bauhaus-black hover:bg-white transition-colors cursor-pointer w-full text-[10px] md:text-sm">
           Fund Protocol via Soroban
         </button>
       </div>
