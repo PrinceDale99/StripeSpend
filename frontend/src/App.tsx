@@ -38,7 +38,7 @@ const DEFAULT_STUDENT: StudentState = {
   isVerified: false
 };
 
-function useProtocolState(walletAddress: string | null) {
+function useProtocolState(walletAddress: string | null, isDemoMode: boolean) {
   const [globalStats, setGlobalStats] = useState<GlobalStats>(DEFAULT_GLOBAL);
   const [studentState, setStudentState] = useState<StudentState>(DEFAULT_STUDENT);
 
@@ -67,6 +67,10 @@ function useProtocolState(walletAddress: string | null) {
   };
 
   const executeRealSorobanTx = async (method: string, args: StellarSdk.xdr.ScVal[] = []) => {
+    if (isDemoMode) {
+      await new Promise(r => setTimeout(r, 1500)); // Simulate network lag
+      return "demo_tx_hash_" + Math.random().toString(36).substring(7);
+    }
     if (!walletAddress) throw new Error("Wallet not connected");
     const server = new StellarSdk.rpc.Server(RPC_URL);
     const contract = new StellarSdk.Contract(CONTRACT_ID);
@@ -141,6 +145,8 @@ export default function App() {
   const [hasFreighter, setHasFreighter] = useState(false);
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [view, setView] = useState<'landing' | 'student' | 'donor'>('landing');
+  const [isDemoMode, setIsDemoMode] = useState(false);
+  const [showDemoModal, setShowDemoModal] = useState(false);
 
   // Dark Mode State - Default to light unless explicitly saved as dark
   const [isDarkMode, setIsDarkMode] = useState(() => {
@@ -163,8 +169,7 @@ export default function App() {
 
   const [showConnectModal, setShowConnectModal] = useState(false);
   const [txModal, setTxModal] = useState<{ show: boolean, status: 'pending' | 'success' | 'failed', message: string }>({ show: false, status: 'pending', message: '' });
-
-  const { globalStats, studentState, donorDeposit, studentClaim, verifyStudent } = useProtocolState(walletAddress);
+  const { globalStats, studentState, donorDeposit, studentClaim, verifyStudent } = useProtocolState(walletAddress, isDemoMode);
 
   useEffect(() => {
     const initFreighter = async () => {
@@ -242,6 +247,16 @@ export default function App() {
         </div>
 
         <div className="bg-bauhaus-yellow dark:bg-yellow-500 p-2 md:p-6 flex items-center justify-center w-full md:w-auto gap-3 md:gap-4">
+          <button 
+            onClick={() => {
+              if (!isDemoMode) setShowDemoModal(true);
+              setIsDemoMode(!isDemoMode);
+              if (!walletAddress && !isDemoMode) setWalletAddress("G_DEMO_ACCOUNT_123");
+            }} 
+            className={`px-3 py-2 border-2 border-bauhaus-black dark:border-gray-900 font-black text-[8px] md:text-[10px] uppercase tracking-widest transition-colors ${isDemoMode ? 'bg-bauhaus-red text-white' : 'bg-bauhaus-white text-bauhaus-black hover:bg-gray-100'}`}
+          >
+            {isDemoMode ? 'Demo ON' : 'Demo Mode'}
+          </button>
           <button onClick={() => setIsDarkMode(!isDarkMode)} className="p-2 border-2 md:border-4 border-bauhaus-black dark:border-gray-900 rounded-full hover:bg-white/20 transition-colors shrink-0">
             {isDarkMode ? <Sun className="w-4 h-4 text-gray-900" /> : <Moon className="w-4 h-4 text-bauhaus-black" />}
           </button>
@@ -249,7 +264,7 @@ export default function App() {
             onClick={() => walletAddress ? null : setShowConnectModal(true)}
             className="flex-grow md:w-auto bg-bauhaus-black dark:bg-gray-900 text-bauhaus-white font-bold text-[10px] md:text-xs tracking-[0.1em] md:tracking-[0.2em] uppercase px-3 py-2 md:px-4 md:py-3 hover:bg-gray-800 dark:hover:bg-black transition-colors truncate"
           >
-            {walletAddress ? formatAddress(walletAddress) : 'Connect Wallet'}
+            {walletAddress ? (isDemoMode && walletAddress === "G_DEMO_ACCOUNT_123" ? "DEMO WALLET" : formatAddress(walletAddress)) : 'Connect Wallet'}
           </button>
         </div>
       </header>
@@ -259,6 +274,24 @@ export default function App() {
         {view === 'student' && <StudentDashboard triggerTx={triggerTx} state={studentState} verifyFn={verifyStudent} claimFn={studentClaim} walletAddress={walletAddress} />}
         {view === 'donor' && <DonorDashboard triggerTx={triggerTx} depositFn={donorDeposit} globalStats={globalStats} />}
       </main>
+
+      {/* Demo Modal */}
+      {showDemoModal && (
+        <div className="fixed inset-0 bg-black/90 z-[60] flex items-center justify-center p-4 backdrop-blur-md">
+          <div className="bg-bauhaus-white dark:bg-gray-900 border-8 border-bauhaus-red p-8 md:p-12 w-full max-w-lg text-center animate-in zoom-in duration-300">
+            <div className="w-20 h-20 bg-bauhaus-red rounded-full mx-auto mb-8 flex items-center justify-center text-white text-4xl font-black">!</div>
+            <h2 className="text-3xl font-black uppercase mb-6 tracking-tighter text-bauhaus-red">Entering Demo Mode</h2>
+            <p className="font-bold text-sm md:text-base uppercase tracking-widest leading-relaxed mb-10 text-bauhaus-black dark:text-white">
+              Demo mode allows you to explore StipeStream without spending real XLM or USDC. 
+              <br/><br/>
+              <span className="text-bauhaus-blue dark:text-blue-400">Transactions are simulated on-chain. This will NOT affect your real wallet balance or increase/decrease your actual funds.</span>
+            </p>
+            <button onClick={() => setShowDemoModal(false)} className="bg-bauhaus-black dark:bg-gray-800 text-bauhaus-white font-black uppercase tracking-[0.3em] px-12 py-5 w-full hover:bg-gray-700 transition-all border-4 border-bauhaus-black">
+              I Understand
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Connect Modal */}
       {showConnectModal && (
@@ -282,7 +315,7 @@ export default function App() {
         <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
           <div className={`border-4 md:border-8 border-bauhaus-black dark:border-gray-700 p-6 md:p-10 w-full max-w-md ${txModal.status === 'success' ? 'bg-bauhaus-white dark:bg-gray-900' : txModal.status === 'failed' ? 'bg-bauhaus-red text-white' : 'bg-bauhaus-yellow dark:bg-yellow-500 text-bauhaus-black'}`}>
             <h2 className="text-2xl md:text-3xl font-black uppercase mb-4 tracking-widest">
-              {txModal.status === 'pending' ? 'Sign Tx...' : txModal.status === 'success' ? 'Success!' : 'Failed'}
+              {txModal.status === 'pending' ? (isDemoMode ? 'Simulating Tx...' : 'Sign Tx...') : txModal.status === 'success' ? 'Success!' : 'Failed'}
             </h2>
             <p className="font-bold text-xs md:text-sm tracking-widest uppercase opacity-80 mb-8">{txModal.message}</p>
             {txModal.status !== 'pending' && (
