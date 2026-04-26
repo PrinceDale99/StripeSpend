@@ -4,6 +4,8 @@
 
 ![StipeStream Banner](./site_home.png)
 
+[**🌐 Checkout the Live Website**](https://princedale99.github.io/StripeSpend/)
+
 ## The Friction: Why StipeStream?
 **The Scenario:** Maria is a senior computer science student at a university in Metro Manila. Her monthly living allowance from a local scholarship NGO is her only way to pay for her daily commute and meals. When the NGO’s accounting department faces a "bureaucratic bottleneck," Maria’s funds are delayed by two weeks. 
 
