@@ -1,9 +1,36 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 @import "tailwindcss";
+
+@theme {
+  --color-brand-bg: #f4f0e6;
+  --color-brand-yellow: #ffcc00;
+  --color-brand-black: #111111;
+  --color-brand-white: #ffffff;
+  --color-brand-lightYellow: #ffe57f;
+  
+  --shadow-brutal: 4px 4px 0px 0px rgba(17,17,17,1);
+  --shadow-brutal-sm: 2px 2px 0px 0px rgba(17,17,17,1);
+  --shadow-brutal-hover: 2px 2px 0px 0px rgba(17,17,17,1);
+}
 
 @layer base {
   body {
-    @apply bg-gray-50 text-gray-900 antialiased font-sans leading-relaxed;
-    line-height: 1.6;
+    @apply bg-brand-bg text-brand-black antialiased font-sans;
   }
+}
+
+.brutal-border {
+  @apply border-[3px] border-[#111];
+}
+
+.brutal-card {
+  @apply bg-white border-[3px] border-[#111] shadow-brutal;
+}
+
+.brutal-button {
+  @apply bg-brand-yellow font-bold uppercase text-[#111] border-[3px] border-[#111] shadow-brutal transition-all hover:-translate-y-0.5 hover:shadow-[6px_6px_0px_0px_rgba(17,17,17,1)] active:translate-y-1 active:shadow-none px-6 py-3;
+}
+
+.brutal-input {
+  @apply w-full bg-white border-[3px] border-[#111] p-3 text-sm font-medium focus:outline-none focus:ring-0;
 }
