@@ -7,7 +7,7 @@ const puppeteer = require('puppeteer');
   const page = await browser.newPage();
   
   // Navigate to home
-  await page.goto('http://localhost:5173/soroban4252026/', { waitUntil: 'networkidle0' });
+  await page.goto('http://localhost:5173/StripeSpend/', { waitUntil: 'networkidle0' });
   await page.screenshot({ path: '../site_home.png', fullPage: true });
 
   // Navigate to Stipends

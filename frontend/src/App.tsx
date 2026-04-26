@@ -67,29 +67,52 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-brand-bg text-brand-black font-sans selection:bg-brand-yellow selection:text-black">
+    <div className="min-h-screen bg-bauhaus-bg text-bauhaus-black font-sans flex flex-col selection:bg-bauhaus-yellow">
       
-      {/* Top Navbar */}
-      <nav className="w-full bg-brand-bg border-b-[3px] border-black flex items-center justify-between px-8 py-4 sticky top-0 z-50">
-        <div className="text-2xl font-black italic tracking-tight">StipeStream</div>
+      {/* Bauhaus Geometric Header */}
+      <header className="w-full grid grid-cols-12 border-b-8 border-bauhaus-black bg-bauhaus-white">
+        <div className="col-span-12 md:col-span-3 bg-bauhaus-red p-8 flex items-center justify-center">
+          <div className="text-bauhaus-white text-3xl font-black uppercase tracking-[0.2em] break-all leading-none">
+            Stipe<br/>Stream
+          </div>
+        </div>
         
-        <div className="flex gap-8 text-sm font-bold tracking-wide uppercase">
-          <button onClick={() => setView('home')} className={`transition-colors ${view === 'home' ? 'text-black bg-brand-yellow px-3 py-1 border-[3px] border-black shadow-[2px_2px_0_0_#111]' : 'text-gray-600 hover:text-black px-3 py-1'}`}>HOME</button>
-          <button onClick={() => setView('stipends')} className={`transition-colors ${view === 'stipends' ? 'text-black bg-brand-yellow px-3 py-1 border-[3px] border-black shadow-[2px_2px_0_0_#111]' : 'text-gray-600 hover:text-black px-3 py-1'}`}>STIPENDS</button>
-          <button onClick={() => setView('history')} className={`transition-colors ${view === 'history' ? 'text-black bg-brand-yellow px-3 py-1 border-[3px] border-black shadow-[2px_2px_0_0_#111]' : 'text-gray-600 hover:text-black px-3 py-1'}`}>HISTORY</button>
+        <div className="col-span-12 md:col-span-6 p-8 flex items-end">
+          <nav className="flex gap-12 text-sm font-bold tracking-[0.3em] uppercase">
+            <button 
+              onClick={() => setView('home')} 
+              className={`hover:text-bauhaus-red transition-colors ${view === 'home' ? 'text-bauhaus-red border-b-4 border-bauhaus-red pb-1' : ''}`}
+            >
+              Home
+            </button>
+            <button 
+              onClick={() => setView('stipends')} 
+              className={`hover:text-bauhaus-blue transition-colors ${view === 'stipends' ? 'text-bauhaus-blue border-b-4 border-bauhaus-blue pb-1' : ''}`}
+            >
+              Stipends
+            </button>
+            <button 
+              onClick={() => setView('history')} 
+              className={`hover:text-bauhaus-yellow transition-colors ${view === 'history' ? 'text-bauhaus-yellow border-b-4 border-bauhaus-yellow pb-1' : ''}`}
+            >
+              Ledger
+            </button>
+          </nav>
         </div>
 
-        <button 
-          onClick={handleConnect}
-          className="bg-[#111] text-white font-bold text-xs tracking-wider uppercase px-4 py-2 hover:bg-gray-800 transition-colors"
-        >
-          {walletAddress ? formatAddress(walletAddress) : isConnecting ? 'CONNECTING...' : 'CONNECT WALLET'}
-        </button>
-      </nav>
+        <div className="col-span-12 md:col-span-3 bg-bauhaus-yellow p-8 flex items-center justify-center">
+          <button 
+            onClick={handleConnect}
+            className="w-full bg-bauhaus-black text-bauhaus-white font-bold text-xs tracking-[0.2em] uppercase px-4 py-4 hover:bg-gray-800 transition-colors"
+          >
+            {walletAddress ? formatAddress(walletAddress) : isConnecting ? 'Connecting' : 'Connect Wallet'}
+          </button>
+        </div>
+      </header>
 
       {/* Main Content Area */}
-      <main className="max-w-6xl mx-auto px-8 py-12">
-        {view === 'home' && <HomeView setView={setView} walletAddress={walletAddress} />}
+      <main className="flex-grow bauhaus-container w-full">
+        {view === 'home' && <HomeView setView={setView} />}
         {view === 'stipends' && <StipendsView />}
         {view === 'history' && <HistoryView />}
       </main>
@@ -98,88 +121,55 @@ export default function App() {
   );
 }
 
-function HomeView({ setView, walletAddress }: { setView: (v: any) => void, walletAddress: string | null }) {
+function HomeView({ setView }: { setView: (v: any) => void }) {
   return (
-    <div className="space-y-12 animate-in fade-in duration-500">
-      <div>
-        <h3 className="text-xs font-bold text-gray-500 tracking-widest uppercase mb-2">Overview</h3>
-        <h1 className="text-5xl font-black tracking-tight uppercase">Welcome, NGO Admin</h1>
+    <div className="grid grid-cols-12 gap-8 animate-in fade-in duration-700">
+      
+      {/* Title Section */}
+      <div className="col-span-12 md:col-span-8 flex flex-col justify-center mb-8">
+        <h3 className="text-bauhaus-red font-bold tracking-[0.3em] uppercase mb-4 text-sm">Dashboard</h3>
+        <h1 className="text-6xl md:text-8xl font-black uppercase leading-[0.9]">
+          NGO<br/>Admin<br/>Portal
+        </h1>
       </div>
 
-      {/* Top Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-brand-yellow brutal-border p-6 flex flex-col justify-between shadow-brutal min-h-[160px]">
-          <div className="text-xs font-bold tracking-widest uppercase mb-4">Wallet Balance</div>
-          <div>
-            <div className="text-4xl font-black mb-1 flex items-center gap-2">
-              <span className="w-8 h-2 bg-black inline-block"></span>
-              USDC
-            </div>
-          </div>
-          <a href="#" className="text-xs font-bold flex items-center gap-1 mt-4 hover:underline">
-            ↗ VIEW ON EXPLORER
-          </a>
-        </div>
-        
-        <div className="brutal-card p-6 flex flex-col justify-between min-h-[160px]">
-          <div className="text-xs font-bold tracking-widest uppercase text-gray-500 mb-4">Active Stipends</div>
-          <div>
-            <div className="text-5xl font-black mb-1">0</div>
-            <div className="text-xs font-bold tracking-widest uppercase text-gray-400">In-Flight</div>
-          </div>
-        </div>
-
-        <div className="brutal-card p-6 flex flex-col justify-between min-h-[160px]">
-          <div className="text-xs font-bold tracking-widest uppercase text-gray-500 mb-4">Total Locked</div>
-          <div>
-            <div className="text-5xl font-black mb-1">0.00 <span className="text-2xl text-gray-500">USDC</span></div>
-            <div className="text-xs font-bold tracking-widest uppercase text-gray-400">Across active stipends</div>
-          </div>
-        </div>
+      {/* Geometric Element */}
+      <div className="col-span-12 md:col-span-4 flex items-center justify-center hidden md:flex">
+        <div className="w-48 h-48 rounded-full bg-bauhaus-blue"></div>
       </div>
 
-      {/* Action Banners */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="brutal-card p-8">
-          <h2 className="text-2xl font-black mb-2 uppercase">Secure Disbursement</h2>
-          <p className="text-gray-600 mb-6 font-medium">Lock funds for a student. Auto-releases every 30 days.</p>
-          <button onClick={() => setView('stipends')} className="w-full brutal-button">NEW STIPEND +</button>
-        </div>
-        
-        <div className="brutal-card p-8">
-          <h2 className="text-2xl font-black mb-2 uppercase">Transaction History</h2>
-          <p className="text-gray-600 mb-6 font-medium">Full ledger of past and active stipend payments.</p>
-          <button onClick={() => setView('history')} className="w-full bg-white font-bold uppercase text-[#111] border-[3px] border-[#111] shadow-brutal transition-all hover:-translate-y-0.5 hover:shadow-[6px_6px_0px_0px_rgba(17,17,17,1)] active:translate-y-1 active:shadow-none px-6 py-3">VIEW HISTORY</button>
-        </div>
+      {/* Stats Blocks */}
+      <div className="col-span-12 md:col-span-4 bg-bauhaus-white border-l-8 border-bauhaus-blue p-10">
+        <div className="text-xs font-bold tracking-[0.2em] uppercase text-gray-400 mb-6">Total Locked</div>
+        <div className="text-5xl font-black mb-2">0.00</div>
+        <div className="text-sm font-bold tracking-widest text-bauhaus-blue">USDC</div>
       </div>
 
-      {/* Empty States */}
-      <div className="space-y-6">
-        <h2 className="text-3xl font-black uppercase">Active Stipends</h2>
-        <div className="border-[3px] border-dashed border-black p-16 flex flex-col items-center justify-center text-center bg-black/5">
-          <div className="w-8 h-10 border-[3px] border-gray-400 rounded-md relative mb-4 opacity-50">
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-gray-400 rounded-full"></div>
-            <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-4 h-4 border-[3px] border-gray-400 rounded-t-full border-b-0"></div>
-          </div>
-          <p className="text-gray-500 font-medium mb-6">No active stipends. Create one to get started.</p>
-          <button onClick={() => setView('stipends')} className="brutal-button !py-2 !px-4 text-sm">NEW STIPEND +</button>
-        </div>
+      <div className="col-span-12 md:col-span-4 bg-bauhaus-black text-bauhaus-white p-10">
+        <div className="text-xs font-bold tracking-[0.2em] uppercase text-gray-500 mb-6">Active Stipends</div>
+        <div className="text-5xl font-black mb-2">0</div>
+        <div className="text-sm font-bold tracking-widest text-bauhaus-yellow">IN-FLIGHT</div>
       </div>
 
-      <div className="space-y-6 pb-20">
-        <div className="flex justify-between items-end">
-          <h2 className="text-3xl font-black uppercase">Recent Activity</h2>
-          <button onClick={() => setView('history')} className="text-blue-600 font-bold text-sm hover:underline">VIEW ALL →</button>
+      <div className="col-span-12 md:col-span-4 bg-bauhaus-yellow p-10 flex flex-col justify-between">
+        <div>
+          <div className="text-xs font-bold tracking-[0.2em] uppercase text-bauhaus-black mb-6">Action</div>
+          <h2 className="text-2xl font-black uppercase mb-4 leading-tight">Create<br/>Stipend</h2>
         </div>
-        <div className="brutal-border bg-white p-5 flex justify-between items-center">
-          <div>
-            <div className="font-bold text-sm uppercase mb-1">Business Profile Created: NGO Admin</div>
-            <div className="text-xs text-gray-500 font-medium tracking-wide">APR 26, 2026, 10:35 PM</div>
-          </div>
-          <a href="#" className="text-blue-600 font-bold text-xs flex items-center gap-1 hover:underline">
-            ↗ Explorer
-          </a>
+        <button onClick={() => setView('stipends')} className="bauhaus-btn-black bg-bauhaus-black text-bauhaus-white font-bold uppercase tracking-[0.2em] text-xs px-6 py-4 hover:bg-gray-800 transition-colors mt-8">
+          Initialize
+        </button>
+      </div>
+
+      {/* Activity Bar */}
+      <div className="col-span-12 border-t-4 border-b-4 border-bauhaus-black py-6 mt-8 flex justify-between items-center bg-bauhaus-white px-8">
+        <div>
+          <span className="font-black uppercase tracking-widest text-bauhaus-red mr-4">LATEST</span>
+          <span className="text-sm font-bold uppercase tracking-wider text-gray-600">Business Profile Created</span>
         </div>
+        <button onClick={() => setView('history')} className="text-xs font-bold tracking-[0.2em] uppercase hover:text-bauhaus-blue">
+          View Log
+        </button>
       </div>
     </div>
   );
@@ -187,64 +177,62 @@ function HomeView({ setView, walletAddress }: { setView: (v: any) => void, walle
 
 function StipendsView() {
   return (
-    <div className="space-y-12 animate-in fade-in duration-500">
-      <h1 className="text-5xl font-black tracking-tight uppercase">Secure Stipend</h1>
+    <div className="grid grid-cols-12 gap-0 animate-in fade-in duration-700 bg-bauhaus-white shadow-2xl">
+      
+      {/* Left Form Side */}
+      <div className="col-span-12 md:col-span-7 p-12 lg:p-20 border-r-8 border-bauhaus-black">
+        <h1 className="text-5xl font-black uppercase mb-16 leading-none">
+          Secure<br/>Stipend
+        </h1>
+        
+        <div className="space-y-12">
+          <div>
+            <label className="block text-xs font-bold tracking-[0.2em] uppercase mb-4 text-bauhaus-blue">Student Address</label>
+            <input type="text" placeholder="G..." className="bauhaus-input" />
+          </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
-        {/* Entry Form */}
-        <div className="brutal-card p-8">
-          <h2 className="text-2xl font-black mb-8 uppercase">Transaction Entry</h2>
+          <div>
+            <label className="block text-xs font-bold tracking-[0.2em] uppercase mb-4 text-bauhaus-red">Amount (USDC)</label>
+            <input type="text" placeholder="0.00" className="bauhaus-input text-4xl" />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold tracking-[0.2em] uppercase mb-6">Release Interval</label>
+            <div className="flex gap-4">
+              <button className="flex-1 border-2 border-bauhaus-black py-4 font-black text-lg hover:bg-bauhaus-black hover:text-bauhaus-white transition-colors">30D</button>
+              <button className="flex-1 bg-bauhaus-yellow border-2 border-bauhaus-yellow py-4 font-black text-lg text-bauhaus-black">60D</button>
+              <button className="flex-1 border-2 border-bauhaus-black py-4 font-black text-lg hover:bg-bauhaus-black hover:text-bauhaus-white transition-colors">90D</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Right Summary Side */}
+      <div className="col-span-12 md:col-span-5 bg-bauhaus-bg flex flex-col relative overflow-hidden">
+        {/* Geometric accent */}
+        <div className="absolute -top-32 -right-32 w-64 h-64 bg-bauhaus-red rounded-full opacity-10"></div>
+        
+        <div className="p-12 flex-grow">
+          <h2 className="text-xl font-bold tracking-[0.2em] uppercase mb-12 border-b-2 border-bauhaus-black pb-4">Summary</h2>
           
           <div className="space-y-6">
-            <div>
-              <label className="block text-xs font-bold tracking-widest uppercase mb-2">Student Stellar Address</label>
-              <input type="text" placeholder="G...ABCD" className="brutal-input" />
+            <div className="flex justify-between items-end">
+              <span className="text-xs font-bold uppercase tracking-widest text-gray-500">Payment</span>
+              <span className="font-black text-xl">0.00 USDC</span>
             </div>
-
-            <div>
-              <label className="block text-xs font-bold tracking-widest uppercase mb-2">Amount (USDC)</label>
-              <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-gray-500">$</span>
-                <input type="text" placeholder="0.00" className="brutal-input pl-8" />
-              </div>
+            <div className="flex justify-between items-end">
+              <span className="text-xs font-bold uppercase tracking-widest text-gray-500">Network Fee</span>
+              <span className="font-black text-xl">0.00 USDC</span>
             </div>
-
-            <div>
-              <label className="block text-xs font-bold tracking-widest uppercase mb-2">Release Interval (Auto-Release)</label>
-              <div className="grid grid-cols-3 gap-4">
-                <button className="brutal-border bg-white py-3 font-bold text-sm hover:bg-gray-50">30D</button>
-                <button className="brutal-border bg-brand-yellow py-3 font-bold text-sm shadow-[2px_2px_0_0_#111]">60D</button>
-                <button className="brutal-border bg-white py-3 font-bold text-sm hover:bg-gray-50">90D</button>
-              </div>
-            </div>
-
-            <button className="w-full bg-brand-lightYellow text-black/40 font-bold uppercase border-[3px] border-black/40 py-4 mt-4 cursor-not-allowed">
-              INITIALIZE STIPEND →
-            </button>
           </div>
         </div>
 
-        {/* Summary */}
-        <div className="brutal-border bg-brand-bg p-8 shadow-brutal relative overflow-hidden">
-          {/* Subtle diagonal lines background effect */}
-          <div className="absolute inset-0 opacity-5 pointer-events-none" style={{ backgroundImage: 'repeating-linear-gradient(45deg, #000 0, #000 1px, transparent 0, transparent 50%)', backgroundSize: '10px 10px' }}></div>
-          
-          <h2 className="text-2xl font-black mb-8 uppercase relative z-10">Transaction Summary</h2>
-          
-          <div className="space-y-4 relative z-10">
-            <div className="flex justify-between items-center text-sm font-medium">
-              <span className="text-gray-600">Payment amount</span>
-              <span className="font-bold">0.00 USDC</span>
-            </div>
-            <div className="flex justify-between items-center text-sm font-medium pb-6 border-b-[3px] border-black">
-              <span className="text-gray-600">Network Fee (~0.1%)</span>
-              <span className="font-bold">0.00 USDC</span>
-            </div>
-            <div className="flex justify-between items-center pt-2">
-              <span className="font-bold text-lg">Total to Lock</span>
-              <span className="text-2xl font-black text-gray-500">0.00 USDC</span>
-            </div>
-          </div>
+        <div className="p-12 bg-bauhaus-black text-bauhaus-white mt-auto">
+          <div className="text-xs font-bold uppercase tracking-[0.2em] mb-2 text-bauhaus-yellow">Total Lock</div>
+          <div className="text-4xl font-black mb-8">0.00 USDC</div>
+          <button className="w-full bg-bauhaus-white text-bauhaus-black font-black uppercase tracking-[0.2em] py-5 hover:bg-gray-200 transition-colors">
+            Initialize
+          </button>
         </div>
       </div>
     </div>
@@ -253,36 +241,33 @@ function StipendsView() {
 
 function HistoryView() {
   return (
-    <div className="space-y-12 animate-in fade-in duration-500">
-      <div>
-        <h3 className="text-xs font-bold text-gray-500 tracking-widest uppercase mb-2">Ledger</h3>
-        <h1 className="text-5xl font-black tracking-tight uppercase">Transaction History</h1>
+    <div className="grid grid-cols-12 gap-8 animate-in fade-in duration-700">
+      
+      <div className="col-span-12 flex items-center justify-between mb-8 border-b-8 border-bauhaus-black pb-8">
+        <h1 className="text-5xl md:text-7xl font-black uppercase leading-none">Ledger</h1>
+        <div className="w-16 h-16 bg-bauhaus-red transform rotate-45"></div>
       </div>
 
-      <div className="space-y-6">
-        <h2 className="text-3xl font-black uppercase">All Stipends</h2>
-        <div className="border-[3px] border-dashed border-black p-16 flex flex-col items-center justify-center text-center bg-black/5">
-          <div className="w-8 h-10 border-[3px] border-gray-400 opacity-50 relative mb-4 flex items-center justify-center">
-             <div className="w-4 h-1 bg-gray-400 absolute top-2"></div>
-             <div className="w-4 h-1 bg-gray-400 absolute top-4"></div>
-             <div className="w-4 h-1 bg-gray-400 absolute top-6"></div>
-          </div>
-          <p className="text-gray-500 font-medium">No stipends yet.</p>
+      <div className="col-span-12 md:col-span-8 bg-bauhaus-white p-12 border-l-8 border-bauhaus-yellow">
+        <h2 className="text-xl font-bold tracking-[0.2em] uppercase mb-12">All Stipends</h2>
+        
+        <div className="py-20 flex flex-col items-center justify-center border-4 border-dashed border-gray-300">
+          <div className="w-12 h-12 bg-gray-200 rounded-full mb-6"></div>
+          <p className="text-xs font-bold tracking-[0.2em] uppercase text-gray-400">Empty Ledger</p>
         </div>
       </div>
 
-      <div className="space-y-6 pb-20">
-        <h2 className="text-3xl font-black uppercase">Activity Log</h2>
-        <div className="brutal-border bg-white p-5 flex justify-between items-center">
-          <div>
-            <div className="font-bold text-sm mb-1">Business profile created: NGO Admin</div>
-            <div className="text-xs text-gray-500 font-medium tracking-wide uppercase">APR 26, 2026, 10:35 PM</div>
-          </div>
-          <div className="border-[2px] border-black px-3 py-1 text-[10px] font-bold uppercase tracking-widest">
-            USER REGISTERED
-          </div>
+      <div className="col-span-12 md:col-span-4 bg-bauhaus-black text-bauhaus-white p-12">
+        <h2 className="text-xl font-bold tracking-[0.2em] uppercase mb-12 text-bauhaus-blue">Activity</h2>
+        
+        <div className="border-l-2 border-bauhaus-white pl-6 relative">
+          <div className="absolute w-3 h-3 bg-bauhaus-red rounded-full -left-[7px] top-1"></div>
+          <div className="text-xs font-bold tracking-[0.2em] text-bauhaus-yellow mb-2">USER REGISTERED</div>
+          <div className="text-sm font-bold uppercase tracking-wider mb-1">NGO Admin Profile</div>
+          <div className="text-xs text-gray-500 font-mono">APR 26, 2026</div>
         </div>
       </div>
+
     </div>
   );
 }
