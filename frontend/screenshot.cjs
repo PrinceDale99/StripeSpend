@@ -30,14 +30,9 @@ const puppeteer = require('puppeteer');
     const btn = buttons.find(b => b.textContent.includes('Student'));
     if (btn) btn.click();
     
-    // Also simulate wallet connect in state by clicking Connect Wallet -> Social
+    // Also simulate wallet connect in state by clicking Connect Wallet -> Freighter
     const connectBtn = Array.from(document.querySelectorAll('button')).find(b => b.textContent.includes('Connect Wallet'));
     if (connectBtn) connectBtn.click();
-  });
-  await new Promise(r => setTimeout(r, 500));
-  await page.evaluate(() => {
-    const socialBtn = Array.from(document.querySelectorAll('button')).find(b => b.textContent.includes('Social Login'));
-    if (socialBtn) socialBtn.click();
   });
   // Wait a bit for render
   await new Promise(r => setTimeout(r, 1000));

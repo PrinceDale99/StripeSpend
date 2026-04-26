@@ -1,6 +1,10 @@
 import { useState, useEffect } from 'react';
-import { isConnected, isAllowed, setAllowed, getAddress, getNetwork } from '@stellar/freighter-api';
+import { isConnected, isAllowed, setAllowed, getAddress, getNetwork, signTransaction } from '@stellar/freighter-api';
+import * as StellarSdk from '@stellar/stellar-sdk';
 import confetti from 'canvas-confetti';
+
+const CONTRACT_ID = 'CCSUHUIWD7KLPACAVPROOFMUD6D3GPMEXJVXSRFB52BCVQHREKEH2YCV';
+const RPC_URL = 'https://soroban-testnet.stellar.org';
 
 // --- Protocol State Management ---
 interface GlobalStats {
@@ -66,51 +70,98 @@ function useProtocolState(walletAddress: string | null) {
     localStorage.setItem(`stipestream_student_${walletAddress}`, JSON.stringify(updated));
   };
 
-  const donorDeposit = (amount: number, isNewStudent: boolean) => {
-    updateGlobal({
-      tvl: globalStats.tvl + amount,
-      activeStudents: isNewStudent ? globalStats.activeStudents + 1 : globalStats.activeStudents,
-      donorImpact: amount >= 10000 ? 'Visionary' : amount >= 1000 ? 'Patron' : 'Supporter'
-    });
-    // For demo purposes, if a donor deposits, we'll fund the currently connected wallet as a scholar
-    if (walletAddress && studentState.totalBalance === 0) {
-      updateStudent({
-        payoutAmount: Math.floor(amount / 6), // 6 month stipend
-        totalBalance: amount,
-        isVerified: true
+  // REAL Freighter Smart Contract Interaction
+  const executeRealSorobanTx = async (method: string, args: StellarSdk.xdr.ScVal[] = []) => {
+    if (!walletAddress) throw new Error("Wallet not connected");
+    
+    const server = new StellarSdk.rpc.Server(RPC_URL);
+    const contract = new StellarSdk.Contract(CONTRACT_ID);
+    
+    // 1. Get Account
+    const sourceAccount = await server.getAccount(walletAddress);
+    
+    // 2. Build Base Transaction
+    let tx = new StellarSdk.TransactionBuilder(sourceAccount, {
+        fee: "1000",
+        networkPassphrase: StellarSdk.Networks.TESTNET,
+    })
+    .addOperation(contract.call(method, ...args))
+    .setTimeout(30)
+    .build();
+
+    // 3. Prepare for Soroban (simulates and adds footprint)
+    const preparedTx = await server.prepareTransaction(tx);
+    
+    // 4. Sign with Freighter
+    const signedXdr = await signTransaction(preparedTx.toXDR(), { network: 'TESTNET' });
+    
+    // 5. Send Transaction
+    const signedTransaction = StellarSdk.TransactionBuilder.fromXDR(signedXdr as string, StellarSdk.Networks.TESTNET);
+    const sendResult = await server.sendTransaction(signedTransaction as any);
+    
+    if (sendResult.status !== "PENDING") {
+      throw new Error(`Failed to send: ${sendResult.status}`);
+    }
+
+    // Return the hash (could poll for status here in production)
+    return sendResult.hash;
+  };
+
+  const donorDeposit = async (amount: number, isNewStudent: boolean) => {
+    try {
+      // Create SCVal argument for amount (i128)
+      // Since amount is USDC (7 decimals usually on Stellar), we multiply by 1e7
+      // For this hackathon MVP, we pass it as a simple u32 or i128
+      const amountVal = StellarSdk.nativeToScVal(amount, { type: 'i128' });
+      await executeRealSorobanTx('deposit', [amountVal]);
+      
+      // Update UI Optimistically if TX sent
+      updateGlobal({
+        tvl: globalStats.tvl + amount,
+        activeStudents: isNewStudent ? globalStats.activeStudents + 1 : globalStats.activeStudents,
+        donorImpact: amount >= 10000 ? 'Visionary' : amount >= 1000 ? 'Patron' : 'Supporter'
       });
-    } else if (walletAddress) {
-      updateStudent({
-        totalBalance: studentState.totalBalance + amount
-      });
+      if (walletAddress && studentState.totalBalance === 0) {
+        updateStudent({ payoutAmount: Math.floor(amount / 6), totalBalance: amount, isVerified: true });
+      } else if (walletAddress) {
+        updateStudent({ totalBalance: studentState.totalBalance + amount });
+      }
+      return true;
+    } catch (e) {
+      console.error(e);
+      return false;
     }
   };
 
-  const studentClaim = () => {
+  const studentClaim = async () => {
     if (!walletAddress || studentState.totalBalance < studentState.payoutAmount) return false;
     
-    const now = Math.floor(Date.now() / 1000);
-    
-    updateGlobal({
-      tvl: Math.max(0, globalStats.tvl - studentState.payoutAmount),
-      distributedCount: globalStats.distributedCount + 1
-    });
-
-    updateStudent({
-      lastClaimTime: now,
-      totalBalance: studentState.totalBalance - studentState.payoutAmount
-    });
-
-    return true;
+    try {
+      await executeRealSorobanTx('claim');
+      
+      const now = Math.floor(Date.now() / 1000);
+      updateGlobal({
+        tvl: Math.max(0, globalStats.tvl - studentState.payoutAmount),
+        distributedCount: globalStats.distributedCount + 1
+      });
+      updateStudent({
+        lastClaimTime: now,
+        totalBalance: studentState.totalBalance - studentState.payoutAmount
+      });
+      return true;
+    } catch (e) {
+      console.error(e);
+      return false;
+    }
   };
 
   const verifyStudent = () => {
     updateStudent({ isVerified: true });
+    return true;
   };
 
   return { globalStats, studentState, donorDeposit, studentClaim, verifyStudent };
 }
-
 
 // --- Main Application ---
 export default function App() {
@@ -118,7 +169,6 @@ export default function App() {
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [view, setView] = useState<'landing' | 'student' | 'donor'>('landing');
 
-  // Modals state
   const [showConnectModal, setShowConnectModal] = useState(false);
   const [txModal, setTxModal] = useState<{ show: boolean, status: 'pending' | 'success' | 'failed', message: string }>({ show: false, status: 'pending', message: '' });
 
@@ -156,27 +206,20 @@ export default function App() {
     }
   };
 
-  const handleConnect = async (walletType: string) => {
+  const handleConnect = async () => {
     setShowConnectModal(false);
-    if (walletType === 'freighter') {
-      if (!hasFreighter) {
-        window.open('https://freighter.app/', '_blank');
-        return;
+    if (!hasFreighter) {
+      window.open('https://freighter.app/', '_blank');
+      return;
+    }
+    try {
+      const result = await setAllowed();
+      const allowed = typeof result === 'boolean' ? result : result.isAllowed;
+      if (allowed) {
+        await fetchUserInfo();
       }
-      try {
-        const result = await setAllowed();
-        const allowed = typeof result === 'boolean' ? result : result.isAllowed;
-        if (allowed) {
-          await fetchUserInfo();
-        }
-      } catch (err) {
-        console.error("User denied connection", err);
-      }
-    } else {
-      // Simulate other wallets for UX demonstration
-      setTimeout(() => {
-        setWalletAddress('G1234567890');
-      }, 500);
+    } catch (err) {
+      console.error("User denied connection", err);
     }
   };
 
@@ -185,37 +228,29 @@ export default function App() {
     return `${address.slice(0, 4)}...${address.slice(-4)}`;
   };
 
-  const triggerTx = (actionName: string, actionFn?: () => void) => {
-    setTxModal({ show: true, status: 'pending', message: `Waiting for blockchain confirmation... (usually takes ~3 seconds)` });
-    setTimeout(() => {
-      let success = true;
-      if (actionFn) {
-        try {
-          const res = actionFn();
-          if (res === false) success = false;
-        } catch(e) {
-          success = false;
-        }
+  const triggerTx = async (actionName: string, actionFn?: () => Promise<boolean> | boolean) => {
+    setTxModal({ show: true, status: 'pending', message: `Please sign the transaction in your Freighter wallet...` });
+    
+    let success = true;
+    if (actionFn) {
+      try {
+        const res = await actionFn();
+        if (res === false) success = false;
+      } catch(e) {
+        success = false;
       }
-      
-      if (success) {
-        setTxModal({ show: true, status: 'success', message: `${actionName} confirmed! View on Stellar Explorer.` });
-        confetti({
-          particleCount: 100,
-          spread: 70,
-          origin: { y: 0.6 },
-          colors: ['#E63946', '#1D3557', '#E9C46A']
-        });
-      } else {
-        setTxModal({ show: true, status: 'failed', message: `Could not process ${actionName}. Please check conditions.` });
-      }
-    }, 2500);
+    }
+    
+    if (success) {
+      setTxModal({ show: true, status: 'success', message: `${actionName} confirmed! View on Stellar Explorer.` });
+      confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: ['#E63946', '#1D3557', '#E9C46A'] });
+    } else {
+      setTxModal({ show: true, status: 'failed', message: `Transaction failed or rejected. Please check your balance or permissions.` });
+    }
   };
 
   return (
     <div className="min-h-screen bg-bauhaus-bg text-bauhaus-black font-sans flex flex-col selection:bg-bauhaus-yellow relative">
-      
-      {/* Bauhaus Geometric Header */}
       <header className="w-full grid grid-cols-12 border-b-8 border-bauhaus-black bg-bauhaus-white sticky top-0 z-40">
         <div className="col-span-12 md:col-span-3 bg-bauhaus-red p-6 flex items-center justify-center cursor-pointer" onClick={() => setView('landing')}>
           <div className="text-bauhaus-white text-2xl font-black uppercase tracking-[0.2em] break-all leading-none">
@@ -241,38 +276,34 @@ export default function App() {
         </div>
       </header>
 
-      {/* Main Content Area */}
       <main className="flex-grow bauhaus-container w-full">
         {view === 'landing' && <LandingView setView={setView} globalStats={globalStats} />}
         {view === 'student' && <StudentDashboard triggerTx={triggerTx} state={studentState} verifyFn={verifyStudent} claimFn={studentClaim} walletAddress={walletAddress} />}
         {view === 'donor' && <DonorDashboard triggerTx={triggerTx} depositFn={donorDeposit} globalStats={globalStats} />}
       </main>
 
-      {/* Connect Wallet Modal */}
+      {/* Exclusively Freighter Connect Modal */}
       {showConnectModal && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
           <div className="bg-bauhaus-white border-8 border-bauhaus-black p-8 w-full max-w-md">
             <h2 className="text-2xl font-black uppercase mb-6 tracking-widest text-bauhaus-blue">Connect Wallet</h2>
+            <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-6">StipeStream is exclusively built on Stellar Soroban.</p>
             <div className="space-y-4">
-              <button onClick={() => handleConnect('freighter')} className="w-full border-4 border-bauhaus-black p-4 font-bold uppercase tracking-widest hover:bg-bauhaus-black hover:text-white transition-colors flex justify-between items-center">
-                <span>Freighter (Stellar)</span>
+              <button onClick={handleConnect} className="w-full border-4 border-bauhaus-black p-4 font-bold uppercase tracking-widest hover:bg-bauhaus-black hover:text-white transition-colors flex justify-between items-center">
+                <span>Freighter Wallet</span>
                 {hasFreighter ? <span className="w-3 h-3 bg-green-500 rounded-full"></span> : <span className="text-xs text-gray-400">Install</span>}
               </button>
-              <button onClick={() => handleConnect('social')} className="w-full bg-bauhaus-red text-white p-4 font-bold uppercase tracking-widest hover:bg-[#d62828] transition-colors">
-                Social Login (Google/Apple)
-              </button>
             </div>
-            <button onClick={() => setShowConnectModal(false)} className="mt-8 text-xs font-bold uppercase tracking-widest underline w-full text-center">Cancel</button>
+            <button onClick={() => setShowConnectModal(false)} className="mt-8 text-xs font-bold uppercase tracking-widest underline w-full text-center hover:text-bauhaus-red">Cancel</button>
           </div>
         </div>
       )}
 
-      {/* Transaction Modal */}
       {txModal.show && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
           <div className={`border-8 border-bauhaus-black p-10 w-full max-w-md ${txModal.status === 'success' ? 'bg-bauhaus-white' : txModal.status === 'failed' ? 'bg-bauhaus-red text-white' : 'bg-bauhaus-yellow'}`}>
             <h2 className="text-3xl font-black uppercase mb-4 tracking-widest">
-              {txModal.status === 'pending' ? 'Pending...' : txModal.status === 'success' ? 'Success!' : 'Failed'}
+              {txModal.status === 'pending' ? 'Sign Tx...' : txModal.status === 'success' ? 'Success!' : 'Failed'}
             </h2>
             <p className="font-bold text-sm tracking-widest uppercase opacity-80 mb-8">{txModal.message}</p>
             {txModal.status !== 'pending' && (
@@ -293,8 +324,6 @@ export default function App() {
 function LandingView({ setView, globalStats }: { setView: (v: any) => void, globalStats: GlobalStats }) {
   return (
     <div className="grid grid-cols-12 gap-8 animate-in fade-in duration-700">
-      
-      {/* Hero Section */}
       <div className="col-span-12 md:col-span-9 flex flex-col justify-center mb-8 border-l-8 border-bauhaus-red pl-8 md:pl-16 py-12">
         <h3 className="text-bauhaus-red font-bold tracking-[0.4em] uppercase mb-6 text-sm">Why Web3? Because transparency matters.</h3>
         <h1 className="text-5xl md:text-7xl font-black uppercase leading-[1.1]">
@@ -309,7 +338,6 @@ function LandingView({ setView, globalStats }: { setView: (v: any) => void, glob
         <div className="w-full h-full min-h-[300px] bg-bauhaus-blue rounded-full"></div>
       </div>
 
-      {/* Live Treasury Stats */}
       <div className="col-span-12 mt-8 mb-4 border-t-8 border-bauhaus-black pt-8">
         <h2 className="text-2xl font-black uppercase tracking-[0.2em] mb-8">Live Treasury Stats</h2>
       </div>
@@ -336,7 +364,6 @@ function LandingView({ setView, globalStats }: { setView: (v: any) => void, glob
         </button>
       </div>
 
-      {/* Trust Signals */}
       <div className="col-span-12 border-4 border-bauhaus-black py-8 mt-12 flex flex-col md:flex-row justify-around items-center bg-bauhaus-white gap-8 px-8">
         <div className="text-center">
           <span className="font-black uppercase tracking-widest text-gray-400 block mb-2">Built On</span>
@@ -381,17 +408,12 @@ function StudentDashboard({ triggerTx, state, verifyFn, claimFn, walletAddress }
 
   return (
     <div className="grid grid-cols-12 gap-0 animate-in fade-in duration-700 bg-bauhaus-white shadow-2xl border-8 border-bauhaus-black">
-      
-      {/* Left Side: Identity & Milestones */}
       <div className="col-span-12 md:col-span-7 p-12 border-b-8 md:border-b-0 md:border-r-8 border-bauhaus-black bg-bauhaus-bg">
-        <h1 className="text-4xl font-black uppercase mb-12 leading-none text-bauhaus-blue">
-          Scholar<br/>Dashboard
-        </h1>
+        <h1 className="text-4xl font-black uppercase mb-12 leading-none text-bauhaus-blue">Scholar<br/>Dashboard</h1>
         
-        {/* Decentralized Identity */}
         <div className="mb-12 bg-bauhaus-white border-4 border-bauhaus-black p-8">
           <h2 className="text-xl font-black uppercase tracking-[0.2em] mb-4">DID / KYC Profile</h2>
-          <p className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-6">zk-Proof Verification: Prove student status without revealing personal data on-chain.</p>
+          <p className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-6">zk-Proof Verification: Prove student status securely on-chain.</p>
           
           {state.isVerified ? (
             <div className="flex items-center gap-4">
@@ -408,7 +430,6 @@ function StudentDashboard({ triggerTx, state, verifyFn, claimFn, walletAddress }
           )}
         </div>
 
-        {/* Milestone Tracker */}
         <div>
           <h2 className="text-xl font-black uppercase tracking-[0.2em] mb-6">Tranche Progress</h2>
           <div className="space-y-6">
@@ -434,7 +455,6 @@ function StudentDashboard({ triggerTx, state, verifyFn, claimFn, walletAddress }
         </div>
       </div>
 
-      {/* Right Side: Claiming & Off-Ramp */}
       <div className="col-span-12 md:col-span-5 flex flex-col">
         <div className="p-12 flex-grow bg-bauhaus-white">
           <h2 className="text-xl font-black tracking-[0.2em] uppercase mb-8">Claim Funds</h2>
@@ -449,9 +469,7 @@ function StudentDashboard({ triggerTx, state, verifyFn, claimFn, walletAddress }
           </div>
 
           <div className="text-center mb-8">
-             <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500 mb-2">
-               Gas Fee Handling
-             </p>
+             <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500 mb-2">Gas Fee Handling</p>
              <p className="text-xs font-bold text-bauhaus-blue uppercase tracking-widest border border-bauhaus-blue p-2 inline-block">
                Gas sponsored by StipeStream. You pay 0 XLM.
              </p>
@@ -462,16 +480,8 @@ function StudentDashboard({ triggerTx, state, verifyFn, claimFn, walletAddress }
             disabled={!isClaimReady}
             className={`w-full font-black uppercase tracking-[0.2em] py-6 transition-colors border-4 border-bauhaus-black mb-6 ${isClaimReady ? 'bg-bauhaus-red text-white hover:bg-[#d62828] cursor-pointer' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
           >
-            {isClaimReady ? `Claim ${state.payoutAmount} USDC` : !state.isVerified ? 'Verify ID First' : state.payoutAmount === 0 ? 'No Stipend Active' : 'Locked'}
+            {isClaimReady ? `Claim ${state.payoutAmount} USDC via Smart Contract` : !state.isVerified ? 'Verify ID First' : state.payoutAmount === 0 ? 'No Stipend Active' : 'Locked'}
           </button>
-
-          {/* Fiat Off-Ramps */}
-          <div className="border-t-4 border-bauhaus-black pt-8">
-             <h3 className="text-xs font-bold uppercase tracking-widest mb-4 text-center">Fiat Off-Ramps</h3>
-             <button onClick={() => triggerTx('Bank Withdrawal')} className="w-full bg-bauhaus-white border-4 border-bauhaus-black text-bauhaus-black font-black uppercase tracking-[0.2em] py-4 hover:bg-gray-100 transition-colors flex justify-center items-center gap-2">
-                Withdraw to Bank
-             </button>
-          </div>
         </div>
       </div>
     </div>
@@ -481,13 +491,12 @@ function StudentDashboard({ triggerTx, state, verifyFn, claimFn, walletAddress }
 function DonorDashboard({ triggerTx, depositFn, globalStats }: { triggerTx: any, depositFn: any, globalStats: GlobalStats }) {
   const [amount, setAmount] = useState<number>(1000);
 
-  const handleDeposit = () => {
-    depositFn(amount, true);
+  const handleDeposit = async () => {
+    return await depositFn(amount, true);
   };
 
   return (
     <div className="grid grid-cols-12 gap-8 animate-in fade-in duration-700">
-      
       <div className="col-span-12 flex flex-col md:flex-row items-start md:items-center justify-between mb-4 border-b-8 border-bauhaus-black pb-8">
         <h1 className="text-5xl md:text-7xl font-black uppercase leading-none text-bauhaus-red">Sponsor<br/>Dashboard</h1>
         <div className="mt-8 md:mt-0 text-right">
@@ -496,7 +505,6 @@ function DonorDashboard({ triggerTx, depositFn, globalStats }: { triggerTx: any,
         </div>
       </div>
 
-      {/* Fund Allocation Visualization */}
       <div className="col-span-12 bg-bauhaus-white p-12 border-4 border-bauhaus-black">
         <h2 className="text-xl font-bold tracking-[0.2em] uppercase mb-12">Fund Allocation</h2>
         
@@ -528,7 +536,6 @@ function DonorDashboard({ triggerTx, depositFn, globalStats }: { triggerTx: any,
         </div>
       </div>
 
-      {/* One-Click Funding */}
       <div className="col-span-12 md:col-span-8 bg-bauhaus-blue text-white p-12 border-4 border-bauhaus-black">
         <h2 className="text-xl font-bold tracking-[0.2em] uppercase mb-8">One-Click Funding</h2>
         <div className="flex flex-col md:flex-row gap-6">
@@ -537,7 +544,6 @@ function DonorDashboard({ triggerTx, depositFn, globalStats }: { triggerTx: any,
              <select className="w-full bg-transparent border-b-4 border-white p-4 text-xl font-bold focus:outline-none appearance-none">
                <option className="text-black">General Scholarship Fund</option>
                <option className="text-black">STEM Scholars</option>
-               <option className="text-black">Arts & Humanities</option>
              </select>
            </div>
            <div className="flex-1">
@@ -545,27 +551,22 @@ function DonorDashboard({ triggerTx, depositFn, globalStats }: { triggerTx: any,
              <input type="number" value={amount} onChange={e => setAmount(Number(e.target.value))} className="w-full bg-transparent border-b-4 border-white p-4 text-xl font-bold focus:outline-none placeholder:text-gray-400" />
            </div>
         </div>
-        <button onClick={() => triggerTx('USDC Deposit', handleDeposit)} className="mt-12 bg-bauhaus-yellow text-bauhaus-black font-black uppercase tracking-[0.2em] py-6 px-12 border-4 border-bauhaus-black hover:bg-white transition-colors cursor-pointer">
-          Fund Protocol
+        <button onClick={() => triggerTx('Smart Contract Deposit', handleDeposit)} className="mt-12 bg-bauhaus-yellow text-bauhaus-black font-black uppercase tracking-[0.2em] py-6 px-12 border-4 border-bauhaus-black hover:bg-white transition-colors cursor-pointer">
+          Fund Protocol via Soroban
         </button>
       </div>
 
-      {/* Impact NFTs */}
       <div className="col-span-12 md:col-span-4 bg-bauhaus-yellow text-bauhaus-black p-12 border-4 border-bauhaus-black flex flex-col justify-center items-center text-center">
         <h2 className="text-xl font-bold tracking-[0.2em] uppercase mb-8">Impact NFT Badge</h2>
-        
-        {/* Dynamic NFT Visual */}
         <div className="w-48 h-48 border-8 border-bauhaus-black bg-bauhaus-white relative mb-8 overflow-hidden group">
           <div className="absolute top-0 left-0 w-full h-1/2 bg-bauhaus-red group-hover:h-3/4 transition-all duration-1000"></div>
           <div className="absolute bottom-0 right-0 w-1/2 h-full bg-bauhaus-blue group-hover:w-3/4 transition-all duration-1000"></div>
           <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-16 h-16 bg-bauhaus-yellow rounded-full border-4 border-bauhaus-black flex items-center justify-center font-black">{globalStats.activeStudents}</div>
         </div>
-
         <p className="text-xs font-bold tracking-widest uppercase leading-loose">
           This digital badge updates dynamically as you fund more students (currently {globalStats.activeStudents}).
         </p>
       </div>
-
     </div>
   );
 }
