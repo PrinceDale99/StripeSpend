@@ -108,7 +108,11 @@ stipestream/
 - **Deployment Transaction:** [View on Stellar Expert](https://stellar.expert/explorer/testnet/tx/67a18357ecf92708f61bd0132823395767bf4df8816802d8404e5f6592004bfd)
 
 ### On-Chain Verification
-![Stellar Expert Transaction](./stellar_expert_screenshot.png)
+#### Deployment Transaction
+![Stellar Expert Transaction](./stellar_expert_tx.png)
+
+#### Deployed Smart Contract
+![Stellar Expert Contract](./stellar_expert_contract.png)
 
 ---
 
