@@ -3,12 +3,15 @@
 
 @theme {
   --color-bauhaus-bg: #F4F4F4;
-  --color-bauhaus-red: #E63946; /* Vibrant but easy on the eyes */
-  --color-bauhaus-blue: #1D4ED8; /* Tailwind blue-700, crisp and bright */
-  --color-bauhaus-yellow: #FACC15; /* Tailwind yellow-400, bright and sunny */
-  --color-bauhaus-black: #111827; /* Tailwind gray-900, sharp but not pure black */
+  --color-bauhaus-red: #E63946;
+  --color-bauhaus-blue: #1D4ED8;
+  --color-bauhaus-yellow: #FACC15;
+  --color-bauhaus-black: #111827;
   --color-bauhaus-white: #FFFFFF;
 }
+
+/* Redefine dark variant to support both class and media query */
+@variant dark (&:where(.dark, .dark *));
 
 @layer base {
   body {
@@ -17,7 +20,7 @@
 }
 
 .bauhaus-container {
-  @apply max-w-7xl mx-auto px-6 sm:px-6 lg:px-8 py-8 md:py-12;
+  @apply max-w-7xl mx-auto px-6 sm:px-6 lg:px-8 py-8 md:py-16; /* Increased vertical padding to avoid sticky header overlap */
 }
 
 .bauhaus-card {
