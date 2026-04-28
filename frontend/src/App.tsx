@@ -468,10 +468,10 @@ export default function App() {
                 setShowConnectModal(true);
               }
             }}
-            className="flex-grow md:w-auto bg-bauhaus-black dark:bg-gray-900 text-bauhaus-white font-bold text-[10px] md:text-xs tracking-[0.1em] md:tracking-[0.2em] uppercase px-3 py-2 md:px-4 md:py-3 hover:bg-bauhaus-red dark:hover:bg-red-700 transition-colors truncate group relative"
+            className="flex-grow md:w-auto bg-bauhaus-black dark:bg-gray-900 text-bauhaus-white font-bold text-[10px] md:text-xs tracking-[0.1em] md:tracking-[0.2em] uppercase px-3 py-2 md:px-4 md:py-3 hover:bg-bauhaus-red dark:hover:bg-red-700 transition-colors truncate group relative grid"
             title={walletAddress ? "Click to Disconnect" : "Connect Wallet"}
           >
-            <span className="group-hover:hidden">
+            <div className="col-start-1 row-start-1 transition-opacity duration-200 group-hover:opacity-0 pointer-events-none">
               {walletAddress ? (
                 isDemoMode && walletAddress === "G_DEMO_ACCOUNT_123" ? (
                   "DEMO WALLET"
@@ -482,10 +482,10 @@ export default function App() {
                   </span>
                 )
               ) : 'Connect Wallet'}
-            </span>
-            <span className="hidden group-hover:inline">
+            </div>
+            <div className="col-start-1 row-start-1 opacity-0 transition-opacity duration-200 group-hover:opacity-100 flex items-center justify-center">
               {walletAddress === "G_DEMO_ACCOUNT_123" ? "Exit Demo" : (walletAddress ? "Disconnect" : "Connect Wallet")}
-            </span>
+            </div>
           </button>
         </div>
       </header>
